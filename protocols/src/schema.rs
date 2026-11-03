@@ -69,7 +69,7 @@ imports!(
     ChatCompletionFunctionCall,
     ChatCompletionFunctions,
     WebSearchOptions,
-    FinishReason,
+    Logprobs,
     CompletionUsage,
     Prompt,
 );

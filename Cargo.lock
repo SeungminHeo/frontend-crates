@@ -1121,7 +1121,7 @@ dependencies = [
  "anyhow",
  "dynamo-parsers",
  "dynamo-parsers-v2",
- "dynamo-protocols 8.2.0",
+ "dynamo-protocols",
  "dynamo-renderer",
  "futures",
  "serde",
@@ -1139,7 +1139,7 @@ dependencies = [
  "axum",
  "clap",
  "dynamo-parsers",
- "dynamo-protocols 8.2.0",
+ "dynamo-protocols",
  "dynamo-renderer",
  "dynamo-tokenizers",
  "futures",
@@ -1180,7 +1180,7 @@ dependencies = [
  "aho-corasick",
  "anyhow",
  "async-stream",
- "dynamo-protocols 8.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dynamo-protocols",
  "futures",
  "num-traits",
  "openai-harmony",
@@ -1241,30 +1241,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "dynamo-protocols"
-version = "8.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "774a621dbee86866def6f59eac858651bf080af0732e9c3c4e46081563749c9a"
-dependencies = [
- "async-openai",
- "derive_builder",
- "futures",
- "indexmap 2.14.0",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tracing",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "dynamo-renderer"
 version = "8.0.3"
 dependencies = [
  "anyhow",
  "chrono",
- "dynamo-protocols 8.2.0",
+ "dynamo-protocols",
  "dynamo-tokenizers",
  "either",
  "minijinja",

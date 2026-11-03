@@ -34,7 +34,7 @@ percent-encoding.workspace = true
 # async-stream/futures combinators. dynamo-protocols has no dependencies, so
 # dynamo-parsers -> dynamo-protocols stays acyclic.
 # Keep the public protocol types shared with Dynamo when this crate is patched from git.
-dynamo-protocols = { version = "=8.2.0" }
+dynamo-protocols.workspace = true
 async-stream.workspace = true
 futures.workspace = true
 aho-corasick.workspace = true
