@@ -33,12 +33,11 @@ pub use async_openai::types::chat::{
     ChatCompletionRequestFunctionMessage, ChatCompletionRequestFunctionMessageArgs,
     ChatCompletionRequestMessageContentPartAudio, ChatCompletionRequestMessageContentPartRefusal,
     ChatCompletionRequestMessageContentPartText, ChatCompletionRequestSystemMessageContent,
-    ChatCompletionRequestSystemMessageContentPart, ChatCompletionResponseMessageAudio, Choice,
-    CompletionFinishReason, CompletionTokensDetails, CompletionUsage, ImageDetail, InputAudio,
-    InputAudioFormat, Logprobs, PredictionContent, PredictionContentContent, Prompt,
-    PromptTokensDetails, ResponseFormat, ResponseFormatJsonSchema, Role, ServiceTier, TopLogprobs,
-    WebSearchContextSize, WebSearchLocation, WebSearchOptions, WebSearchUserLocation,
-    WebSearchUserLocationType,
+    ChatCompletionRequestSystemMessageContentPart, ChatCompletionResponseMessageAudio,
+    CompletionTokensDetails, CompletionUsage, ImageDetail, InputAudio, InputAudioFormat, Logprobs,
+    PredictionContent, PredictionContentContent, Prompt, PromptTokensDetails, ResponseFormat,
+    ResponseFormatJsonSchema, Role, ServiceTier, TopLogprobs, WebSearchContextSize,
+    WebSearchLocation, WebSearchOptions, WebSearchUserLocation, WebSearchUserLocationType,
 };
 
 /// OpenAI stop configuration, with Dynamo's token-id stop extension.
@@ -130,8 +129,33 @@ impl From<async_openai::types::chat::StopConfiguration> for Stop {
     }
 }
 
-// Upstream renamed FinishReason (streaming) -- re-export
-pub use async_openai::types::chat::FinishReason;
+/// OpenAI chat finish reasons plus the backend's repetition termination signal.
+/// This extension reports an engine decision; it does not enable repetition detection.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "protocol-schema", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "protocol-schema", schema(as = dynamo_protocols::chat::FinishReason))]
+pub enum FinishReason {
+    Stop,
+    Length,
+    ToolCalls,
+    ContentFilter,
+    FunctionCall,
+    Repetition,
+}
+
+impl From<async_openai::types::chat::FinishReason> for FinishReason {
+    fn from(reason: async_openai::types::chat::FinishReason) -> Self {
+        use async_openai::types::chat::FinishReason as Upstream;
+        match reason {
+            Upstream::Stop => Self::Stop,
+            Upstream::Length => Self::Length,
+            Upstream::ToolCalls => Self::ToolCalls,
+            Upstream::ContentFilter => Self::ContentFilter,
+            Upstream::FunctionCall => Self::FunctionCall,
+        }
+    }
+}
 
 // Keep the historical alias while accepting both OpenAI tool-call kinds.
 pub type FunctionType = ChatCompletionToolType;
@@ -1411,7 +1435,7 @@ pub struct ChatChoice {
     pub index: u32,
     pub message: ChatCompletionResponseMessage,
     // These keys are always serialized, including explicit nulls.
-    #[cfg_attr(feature = "protocol-schema", schema(required, value_type = Option<crate::schema::FinishReason>))]
+    #[cfg_attr(feature = "protocol-schema", schema(required))]
     pub finish_reason: Option<FinishReason>,
     #[cfg_attr(feature = "protocol-schema", schema(required))]
     pub logprobs: Option<ChatChoiceLogprobs>,
@@ -1572,7 +1596,7 @@ pub struct ChatChoiceStream {
     pub index: u32,
     pub delta: ChatCompletionStreamResponseDelta,
     // These keys are always serialized, including explicit nulls.
-    #[cfg_attr(feature = "protocol-schema", schema(required, value_type = Option<crate::schema::FinishReason>))]
+    #[cfg_attr(feature = "protocol-schema", schema(required))]
     pub finish_reason: Option<FinishReason>,
     #[cfg_attr(feature = "protocol-schema", schema(required))]
     pub logprobs: Option<ChatChoiceLogprobs>,

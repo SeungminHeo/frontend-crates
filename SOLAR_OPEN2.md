@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Solar Open2 downstream parser
 
 This branch adds `solar_open2` to the legacy reasoning and tool parser registries
@@ -35,3 +40,7 @@ cargo clippy -p dynamo-parsers --all-targets --no-deps -- -D warnings
 
 Reference formats: [Upstage Solar Open2 model card](https://huggingface.co/upstage/Solar-Open2-250B)
 and [Upstage vLLM tool parser](https://github.com/UpstageAI/vllm/blob/v0.22.0-solar-open2/vllm/tool_parsers/solar_open2_tool_parser.py).
+
+The companion `dynamo-protocols` 8.2.0 patch preserves the engine finish reason
+`repetition` in chat and text completion responses. Pin both crates to the same
+commit; this does not add or configure repetition detection.
