@@ -41,6 +41,7 @@ fn get_reasoning_parser_map() -> &'static HashMap<&'static str, ReasoningParserT
         map.insert("deepseek_v3", ReasoningParserType::DeepseekR1);
         map.insert("deepseek_v3_1", ReasoningParserType::DeepseekR1);
         map.insert("deepseek_v3_2", ReasoningParserType::DeepseekR1);
+        map.insert("solar_open2", ReasoningParserType::SolarOpen2);
         map.insert("basic", ReasoningParserType::Basic);
         map.insert("gpt_oss", ReasoningParserType::GptOss);
         map.insert("qwen3", ReasoningParserType::Qwen);
@@ -166,6 +167,8 @@ pub trait ReasoningParser: Send + std::fmt::Debug {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ReasoningParserType {
+    /// Solar Open2 prefilled reasoning, with native tool-call escape.
+    SolarOpen2,
     DeepseekR1,
     Step3,
     Basic,
@@ -239,6 +242,22 @@ impl ReasoningParserType {
         let force_reasoning_basic_parser =
             BasicReasoningParser::new("<think>".into(), "</think>".into(), true, true);
         match self {
+            ReasoningParserType::SolarOpen2 => ReasoningParserWrapper {
+                parser: Box::new(
+                    BasicReasoningParser::new(
+                        "<|think:start|>".into(),
+                        "<|think:end|>".into(),
+                        true,
+                        true,
+                    )
+                    .with_tool_start_token(crate::tool_calling::solar::CALL_START)
+                    .with_tool_parameter_tokens(
+                        crate::tool_calling::solar::ARG_START,
+                        crate::tool_calling::solar::ARG_END,
+                    )
+                    .with_single_char_marker_buffering(),
+                ),
+            },
             ReasoningParserType::DeepseekR1 => ReasoningParserWrapper {
                 parser: Box::new(force_reasoning_basic_parser),
             },
