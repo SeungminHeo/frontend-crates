@@ -47,6 +47,7 @@ static PARSER_MAP: OnceLock<HashMap<&'static str, ToolCallConfig>> = OnceLock::n
 pub fn get_tool_parser_map() -> &'static HashMap<&'static str, ToolCallConfig> {
     PARSER_MAP.get_or_init(|| {
         let mut map = HashMap::new();
+        map.insert("solar_open2", ToolCallConfig::solar_open2());
         map.insert("hermes", ToolCallConfig::hermes());
         map.insert("nemotron_deci", ToolCallConfig::nemotron_deci());
         map.insert("llama3_json", ToolCallConfig::llama3_json());
@@ -95,6 +96,7 @@ pub async fn try_tool_call_parse(
 ) -> anyhow::Result<(Vec<ToolCallResponse>, Option<String>)> {
     // Use match statement (Rust's switch statement) to call the appropriate parser
     match &config.parser_config {
+        ParserConfig::SolarOpen2 => super::solar::parse(message, tools),
         ParserConfig::Json(json_config) => {
             let (results, normal_content) = try_tool_call_parse_json(message, json_config, tools)?;
             Ok((results, normal_content))
@@ -296,6 +298,7 @@ pub fn detect_tool_call_start(chunk: &str, parser_str: Option<&str>) -> anyhow::
 
     match parser_map.get(parser_key) {
         Some(config) => match &config.parser_config {
+            ParserConfig::SolarOpen2 => Ok(chunk.contains(super::solar::CALL_START)),
             ParserConfig::Json(json_config) => Ok(detect_tool_call_start_json(chunk, json_config)),
             ParserConfig::Harmony(json_config) => {
                 Ok(detect_tool_call_start_harmony(chunk, json_config, false))
@@ -345,6 +348,7 @@ pub fn find_tool_call_end_position(chunk: &str, parser_str: Option<&str>) -> Opt
 
     match parser_map.get(parser_key) {
         Some(config) => match &config.parser_config {
+            ParserConfig::SolarOpen2 => super::solar::complete_end(chunk),
             ParserConfig::Json(json_config) => {
                 let effective_parser = if parser_key == "default" {
                     "nemotron_deci"

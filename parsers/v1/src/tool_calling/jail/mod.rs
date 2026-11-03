@@ -2167,7 +2167,7 @@ impl JailedStream {
     fn suppresses_tool_call_markup(&self) -> bool {
         matches!(
             self.tool_call_parser.as_deref(),
-            Some("hermes") | Some("qwen25") | Some("jamba") | Some("inkling")
+            Some("hermes") | Some("qwen25") | Some("jamba") | Some("inkling") | Some("solar_open2")
         )
     }
 
