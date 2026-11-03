@@ -13,10 +13,59 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::OpenAIError;
 
-use super::{ChatCompletionStreamOptions, Prompt, Stop};
+use super::{ChatCompletionStreamOptions, CompletionUsage, Logprobs, Prompt, Stop};
 
-// Re-export response type from upstream (identical)
-pub use async_openai::types::completions::CreateCompletionResponse;
+/// OpenAI completion finish reasons with the engine repetition extension.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "protocol-schema", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "protocol-schema", schema(as = dynamo_protocols::completion::CompletionFinishReason))]
+pub enum CompletionFinishReason {
+    Stop,
+    Length,
+    ContentFilter,
+    Repetition,
+}
+
+impl From<async_openai::types::chat::CompletionFinishReason> for CompletionFinishReason {
+    fn from(reason: async_openai::types::chat::CompletionFinishReason) -> Self {
+        use async_openai::types::chat::CompletionFinishReason as Upstream;
+        match reason {
+            Upstream::Stop => Self::Stop,
+            Upstream::Length => Self::Length,
+            Upstream::ContentFilter => Self::ContentFilter,
+        }
+    }
+}
+
+/// Completion choice retaining backend-specific finish reasons.
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "protocol-schema", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "protocol-schema", schema(as = dynamo_protocols::completion::Choice))]
+pub struct Choice {
+    pub text: String,
+    pub index: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "protocol-schema", schema(value_type = Option<crate::schema::Logprobs>))]
+    pub logprobs: Option<Logprobs>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub finish_reason: Option<CompletionFinishReason>,
+}
+
+/// OpenAI-compatible completion response with Dynamo's extended choices.
+#[derive(Debug, Deserialize, Clone, PartialEq, Serialize, Default)]
+#[cfg_attr(feature = "protocol-schema", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "protocol-schema", schema(as = dynamo_protocols::completion::CreateCompletionResponse))]
+pub struct CreateCompletionResponse {
+    pub id: String,
+    pub choices: Vec<Choice>,
+    pub created: u32,
+    pub model: String,
+    pub system_fingerprint: Option<String>,
+    pub object: String,
+    #[cfg_attr(feature = "protocol-schema", schema(value_type = Option<crate::schema::CompletionUsage>))]
+    pub usage: Option<CompletionUsage>,
+}
 
 /// Custom deserializer for the echo parameter that only accepts booleans.
 /// Rejects integers and strings with clear error messages.
@@ -276,6 +325,29 @@ mod tests {
         let json = r#"{"model":"test_model","prompt":"one","prompt":"two"}"#;
         let error = serde_json::from_str::<CreateCompletionRequest>(json).unwrap_err();
         assert!(error.to_string().contains("duplicate field `prompt`"));
+    }
+
+    #[test]
+    fn repetition_round_trips_chat_and_text_responses() {
+        let chat =
+            serde_json::json!({"index":0,"delta":{"content":"hello"},"finish_reason":"repetition"});
+        let choice: crate::types::ChatChoiceStream = serde_json::from_value(chat.clone()).unwrap();
+        assert_eq!(
+            choice.finish_reason,
+            Some(crate::types::FinishReason::Repetition)
+        );
+        assert_eq!(
+            serde_json::to_value(choice).unwrap()["finish_reason"],
+            "repetition"
+        );
+        let text = serde_json::json!({"id":"test","object":"text_completion","created":0,"model":"test",
+            "choices":[{"index":0,"text":"hello","finish_reason":"repetition"}],"usage":null,"system_fingerprint":null});
+        let response: CreateCompletionResponse = serde_json::from_value(text.clone()).unwrap();
+        assert_eq!(
+            response.choices[0].finish_reason,
+            Some(CompletionFinishReason::Repetition)
+        );
+        assert_eq!(serde_json::to_value(response).unwrap(), text);
     }
 
     #[test]
