@@ -23,13 +23,14 @@ closing fences. Text after the first call is discarded by the batch parser.
 The existing jail owns incremental buffers and UTF-8 marker splits.
 
 Dynamo's Solar response policy holds executable calls until an actual backend
-`stop`; a length limit, filter, error or unterminated stream drops them all.
+`stop`; a length limit, repetition, filter, cancellation, error or unterminated
+stream drops them all.
 That finish policy belongs to the consumer: a standalone parser cannot infer
 backend termination from text alone.
 
-The parser depends on the published `dynamo-protocols` 8.2.0. Keeping this a
-registry dependency avoids duplicate, incompatible protocol types when Cargo
-patches only `dynamo-parsers` from this git repository.
+The parser depends on the companion `dynamo-protocols` 8.2.0 workspace crate.
+Consumers must patch both packages from this git repository at the same commit
+to keep protocol types consistent across the renderer and both parser crates.
 
 Validation:
 
