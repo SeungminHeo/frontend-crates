@@ -441,6 +441,8 @@ pub(crate) struct TerminalMarkerPolicy {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ParserConfig {
+    /// Solar Open2 raw, schema-typed argument blocks.
+    SolarOpen2,
     Json(JsonParserConfig),
     Xml(XmlParserConfig),
     Pythonic,
@@ -476,6 +478,7 @@ impl ParserConfig {
     /// Returns a vector of start tokens that indicate the beginning of a tool call
     pub fn tool_call_start_tokens(&self) -> Vec<String> {
         match self {
+            ParserConfig::SolarOpen2 => vec![super::solar::CALL_START.into()],
             ParserConfig::Json(config) => config.tool_call_start_tokens.clone(),
             ParserConfig::Harmony(config) => config.tool_call_start_tokens.clone(),
             ParserConfig::Xml(config) => {
@@ -541,6 +544,7 @@ impl ParserConfig {
     /// Returns a vector of end tokens that indicate the end of a tool call
     pub fn tool_call_end_tokens(&self) -> Vec<String> {
         match self {
+            ParserConfig::SolarOpen2 => vec![super::solar::CALL_END.into()],
             ParserConfig::Json(config) => config.tool_call_end_tokens.clone(),
             ParserConfig::Harmony(config) => config.tool_call_end_tokens.clone(),
             ParserConfig::Xml(config) => vec![config.tool_call_end_token.clone()],
@@ -592,6 +596,13 @@ impl Default for ToolCallConfig {
 }
 
 impl ToolCallConfig {
+    pub fn solar_open2() -> Self {
+        Self {
+            parser_config: ParserConfig::SolarOpen2,
+            structural_tag_builder: None,
+        }
+    }
+
     /// Default configuration for hermes tool calls
     /// <tool_call>{"name": "get_weather", "arguments": {"location": "San Francisco, CA", "unit": "fahrenheit"}}\n</tool_call>
     pub fn hermes() -> Self {

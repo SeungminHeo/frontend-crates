@@ -14,6 +14,7 @@ pub mod json;
 pub mod parsers;
 pub mod pythonic;
 pub mod response;
+pub mod solar;
 pub mod structural_tag;
 #[cfg(test)]
 pub mod tests;

@@ -258,8 +258,14 @@ impl BasicReasoningParser {
                         parameter_start,
                     ]
                 };
-                if let Some(marker) = markers.iter().find(|marker| tail.starts_with(**marker)) {
-                    if self._in_reasoning && !self.in_tool_parameter && *marker == "<tool_call>" {
+                let tool_markers = self
+                    .tool_start_tokens
+                    .iter()
+                    .filter(|_| self._in_reasoning && !self.in_tool_parameter)
+                    .map(String::as_str);
+                let markers = markers.iter().copied().chain(tool_markers);
+                if let Some(marker) = markers.clone().find(|marker| tail.starts_with(*marker)) {
+                    if self._in_reasoning && !self.in_tool_parameter && marker == "<tool_call>" {
                         result.reasoning_text.push_str(&self._buffer[span..cursor]);
                         span = cursor;
                         candidate_parameter = Some(false);
@@ -274,18 +280,18 @@ impl BasicReasoningParser {
                     if self.in_tool_parameter {
                         result.normal_text.push_str(marker);
                         self.in_tool_parameter = false;
-                    } else if *marker == self.think_start_token {
+                    } else if marker == self.think_start_token {
                         self._in_reasoning = true;
-                    } else if *marker == self.think_end_token {
+                    } else if marker == self.think_end_token {
                         self._in_reasoning = false;
                     } else {
                         result.normal_text.push_str(marker);
                         self._in_reasoning = false;
-                        self.in_tool_parameter = *marker == parameter_start;
+                        self.in_tool_parameter = marker == parameter_start;
                     }
                     cursor += marker.len();
                     span = cursor;
-                } else if !flush && markers.iter().any(|marker| marker.starts_with(tail)) {
+                } else if !flush && markers.clone().any(|marker| marker.starts_with(tail)) {
                     // At most max(delimiter length)-1 bytes are retained. Partial
                     // markers are never emitted into the wrong channel.
                     break;
