@@ -393,10 +393,6 @@ pub fn try_tool_call_parse_basic_json(
             .iter()
             .any(|token| !token.is_empty() && normal_text.contains(token));
 
-    if config.require_start_token && !config.bare_json_mode && !has_start_token {
-        return Ok((Vec::new(), Some(message.to_string())));
-    }
-
     if !has_start_token {
         // No start tokens found, try to extract JSON directly. Everything that starts with { or [ is considered a potential JSON.
         if let Some(idx) = normal_text.find(['{', '[']) {
