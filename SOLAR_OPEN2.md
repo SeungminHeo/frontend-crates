@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 # Solar Open2 downstream parser
 
 This branch adds `solar_open2` to the legacy reasoning and tool parser registries
-at `dynamo-parsers` 10.0.7, for a Dynamo 1.6.1 downstream build. It is a git-pinned
+at `dynamo-parsers` 11.0.7, for current frontend-crates main. It is a git-pinned
 patch, not a crates.io release. Tracking: SeungminHeo/dynamo#1.
 
 Reasoning uses `<|think:start|>` and `<|think:end|>`, starts in reasoning mode,
@@ -28,7 +28,7 @@ stream drops them all.
 That finish policy belongs to the consumer: a standalone parser cannot infer
 backend termination from text alone.
 
-The parser depends on the companion `dynamo-protocols` 8.2.0 workspace crate.
+The parser depends on the companion `dynamo-protocols` 10.0.0 workspace crate.
 Consumers must patch both packages from this git repository at the same commit
 to keep protocol types consistent across the renderer and both parser crates.
 
@@ -42,6 +42,16 @@ cargo clippy -p dynamo-parsers --all-targets --no-deps -- -D warnings
 Reference formats: [Upstage Solar Open2 model card](https://huggingface.co/upstage/Solar-Open2-250B)
 and [Upstage vLLM tool parser](https://github.com/UpstageAI/vllm/blob/v0.22.0-solar-open2/vllm/tool_parsers/solar_open2_tool_parser.py).
 
-The companion `dynamo-protocols` 8.2.0 patch preserves the engine finish reason
+The companion `dynamo-protocols` 10.0.0 patch preserves the engine finish reason
 `repetition` in chat and text completion responses. Pin both crates to the same
 commit; this does not add or configure repetition detection.
+
+## Maintained branches
+
+- `solar-open2-10.0.7`: parser 10.0.7 / protocols 8.2.0 for Dynamo 1.6.1.
+- `solar-open2-10.2.2`: parser 10.2.2 / protocols 8.4.0 for Dynamo development main.
+- `main`: forward ports on current upstream frontend-crates; consumer pins must match its package versions.
+
+All three include the unmarked zero-call JSON-array preservation fix tracked in
+SeungminHeo/dynamo#2. Native tagged calls and guided required/named calls retain
+their existing semantics. Normal tool-shaped bare JSON remains accepted.
