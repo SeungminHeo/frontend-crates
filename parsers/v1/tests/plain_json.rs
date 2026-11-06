@@ -26,6 +26,14 @@ const ORDINARY_JSON: &[&str] = &[
     "[네이버] 인증번호 [123456]",
 ];
 
+const HERMES_UNMARKED: &[&str] = &[
+    r#"{"name":"Alice"}"#,
+    r#"[{"name":"Alice"}]"#,
+    r#"{"name":"lookup","arguments":{}}"#,
+    r#"[{"name":"lookup","arguments":{}}]"#,
+    r#"결과: {"name":"Alice","parameters":{}}"#,
+];
+
 fn basic_json_parsers() -> Vec<&'static str> {
     let mut names: Vec<_> = get_tool_parser_map()
         .iter()
@@ -45,7 +53,10 @@ fn basic_json_parsers() -> Vec<&'static str> {
 async fn ordinary_json_survives_batch_and_finalize() {
     let mut failures = Vec::new();
     for parser in basic_json_parsers() {
-        for &text in ORDINARY_JSON {
+        for &text in ORDINARY_JSON
+            .iter()
+            .chain(HERMES_UNMARKED.iter().filter(|_| parser == "hermes"))
+        {
             for recover in [false, true] {
                 let (calls, content) = if recover {
                     detect_and_parse_tool_call_with_recovery(text, Some(parser), None).await
@@ -84,7 +95,10 @@ fn chunk(
 #[tokio::test]
 async fn ordinary_json_survives_stream_chunk_boundaries() {
     for parser in basic_json_parsers() {
-        for &text in ORDINARY_JSON {
+        for &text in ORDINARY_JSON
+            .iter()
+            .chain(HERMES_UNMARKED.iter().filter(|_| parser == "hermes"))
+        {
             for split in (0..=text.len()).filter(|&at| text.is_char_boundary(at)) {
                 let chunks = [
                     chunk(&text[..split], None),
@@ -133,7 +147,10 @@ async fn real_calls_and_explicit_empty_wrappers_keep_their_meaning() {
     assert!(calls.is_empty());
     assert_eq!(content.as_deref(), Some(""));
 
-    for parser in basic_json_parsers() {
+    for parser in basic_json_parsers()
+        .into_iter()
+        .filter(|name| *name != "hermes")
+    {
         let payload = r#"[{"name":"lookup","arguments":{"b": 2, "a":1}}]"#;
         let (calls, content) =
             detect_and_parse_tool_call_with_recovery(payload, Some(parser), None)
@@ -154,4 +171,33 @@ async fn real_calls_and_explicit_empty_wrappers_keep_their_meaning() {
             assert_eq!(content.as_deref(), Some("prefix"));
         }
     }
+}
+
+#[tokio::test]
+async fn hermes_requires_markers_but_guided_json_still_works() {
+    for text in [
+        r#"{"name":"lookup","arguments":{}}"#,
+        r#"[{"name":"lookup","arguments":{}}]"#,
+        r#"{"name":"lookup"}"#,
+    ] {
+        for recover in [false, true] {
+            let (calls, content) = if recover {
+                detect_and_parse_tool_call_with_recovery(text, Some("hermes"), None).await
+            } else {
+                detect_and_parse_tool_call(text, Some("hermes"), None).await
+            }
+            .unwrap();
+            assert!(calls.is_empty());
+            assert_eq!(content.as_deref(), Some(text));
+        }
+    }
+    let guided = JsonParserConfig {
+        require_start_token: true,
+        bare_json_mode: true,
+        ..Default::default()
+    };
+    let (calls, _) =
+        try_tool_call_parse_basic_json(r#"{"name":"lookup","arguments":{}}"#, &guided, None)
+            .unwrap();
+    assert_eq!(calls.len(), 1);
 }
