@@ -37,6 +37,10 @@ pub struct JsonParserConfig {
     #[serde(default)]
     pub bare_json_mode: bool,
 
+    /// Require an opening marker unless guided bare JSON mode is selected.
+    #[serde(default)]
+    pub require_start_token: bool,
+
     /// Allow recovery when the outer end-token is missing (max_tokens / EOS
     /// truncation). Streaming jails MUST leave this `false` — otherwise the
     /// parser claims "complete tool call" before the end-token has actually
@@ -95,6 +99,7 @@ impl Default for JsonParserConfig {
             arguments_keys: vec!["arguments".to_string(), "parameters".to_string()],
             parser_type: JsonParserType::Basic,
             bare_json_mode: false,
+            require_start_token: false,
             allow_eof_recovery: false,
             strip_markup_on_recovery: false,
             allow_name_only_call: false,
@@ -616,6 +621,7 @@ impl ToolCallConfig {
                 // into `normal_text`. Unterminated-call suppression (open
                 // `<tool_call>`, no close) is keyed by name in
                 // `detect_and_parse_tool_call_with_recovery`, shared with qwen25.
+                require_start_token: true,
                 allow_name_only_call: true,
                 discard_unparseable_wrapper: true,
                 ..Default::default()
@@ -638,12 +644,15 @@ impl ToolCallConfig {
 
     /// Qwen 2.5 shares Hermes' `<tool_call>...</tool_call>` wire format and the
     /// same "never surface tool-call markup" config — `hermes()` now opts into
-    /// both `allow_name_only_call` and `discard_unparseable_wrapper`, so the
-    /// configs are identical. The only behavioral difference is the EOF-recovery
+    /// both `allow_name_only_call` and `discard_unparseable_wrapper`, but Hermes additionally requires an opening marker. Another difference is the EOF-recovery
     /// opt-out, keyed by name in `detect_and_parse_tool_call_with_recovery`:
     /// qwen25 drops an unterminated complete-body call where hermes salvages it.
     pub fn qwen25() -> Self {
-        Self::hermes()
+        let mut config = Self::hermes();
+        if let ParserConfig::Json(json) = &mut config.parser_config {
+            json.require_start_token = false;
+        }
+        config
     }
 
     /// Default configuration for nemotron tool calls
