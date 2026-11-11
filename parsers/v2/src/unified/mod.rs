@@ -48,6 +48,7 @@
 //! adopted without a translation layer. Where it diverges from the peer shape, the
 //! divergence is stated at the item.
 
+pub mod ax_k3;
 pub mod deepseek_v4;
 pub mod deepseek_v41;
 pub mod gemma4;
@@ -5540,6 +5541,7 @@ macro_rules! unified_registry {
 }
 
 unified_registry! {
+    "ax_k3" | "axk3" | "ax-k3" => ax_k3::ax_k3_unified,
     "deepseek_v4" => deepseek_v4::deepseek_v4_unified,
     "deepseek_v41" => deepseek_v41::deepseek_v41_unified,
     "gemma4" => gemma4::gemma4_unified,

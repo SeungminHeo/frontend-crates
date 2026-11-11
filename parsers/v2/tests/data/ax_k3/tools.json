@@ -1,0 +1,5 @@
+[
+ {"name": "write_file", "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}, "options": {"type": "object"}}, "required": ["path", "content"]}},
+ {"name": "typed", "parameters": {"type": "object", "properties": {"s": {"type": "string"}, "i": {"type": "integer"}, "f": {"type": "number"}, "b": {"type": "boolean"}, "arr": {"type": "array", "items": {"type": "string"}}, "obj": {"type": "object"}, "maybe": {"anyOf": [{"type": "string"}, {"type": "null"}]}, "untyped": {"description": "no type given"}, "top_k": {"type": "integer"}, "top": {"type": "string"}}}},
+ {"name": "ping", "parameters": {"type": "object", "properties": {}}}
+]
