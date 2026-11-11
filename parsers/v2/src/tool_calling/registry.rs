@@ -6,6 +6,7 @@
 use crate::structural_tag::StructuralTagBuilder;
 use crate::unified::canonical_unified_family;
 
+use super::ax_k3::AxK3ToolStreamParser;
 use super::debug::{self, DebugToolParser};
 use super::dsml::DeepSeekV4ToolStreamParser;
 use super::gemma4::Gemma4ToolStreamParser;
@@ -69,6 +70,7 @@ family_registry! {
     ),
     "kimi_k2"      => (KimiK2ToolStreamParser::create, Some(&crate::structural_tag::builders::KIMI_K2)),
     "kimi_k3"      => (KimiK3ToolStreamParser::create, Some(&crate::structural_tag::builders::KIMI_K3)),
+    "ax_k3"        => (AxK3ToolStreamParser::create, None),
 }
 
 fn family_spec(family: &str) -> Option<&'static FamilySpec> {

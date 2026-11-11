@@ -570,8 +570,10 @@ fn all_starting_channels_keep_long_field_progress_and_argument_order() {
             ] {
                 let starts_in_reasoning = state == UnifiedParserStartingState::Reasoning
                     || (state == UnifiedParserStartingState::None
-                        && dynamo_parsers_v2::canonical_unified_family(family)
-                            == Some("nemotron_v3"));
+                        && matches!(
+                            dynamo_parsers_v2::canonical_unified_family(family),
+                            Some("nemotron_v3" | "ax_k3")
+                        ));
                 for (args_head, args_tail) in ["", " ", "x"].into_iter().flat_map(|preceding| {
                     let path = serde_json::to_string(preceding).unwrap();
                     [
