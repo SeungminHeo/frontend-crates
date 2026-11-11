@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub(crate) mod arguments;
+pub mod ax_k3;
 pub mod beam_body;
 pub(crate) mod beam_py;
 pub mod debug;
