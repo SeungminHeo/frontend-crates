@@ -9,6 +9,7 @@ mod gpt_oss_parser;
 mod granite_parser;
 mod inkling_parser;
 mod minimax_append_think_parser;
+mod solar_parser;
 
 // Re-export main types and functions for convenience
 pub(crate) use crate::tool_calling::config::MINIMAX_M3_TOOL_NAMESPACE;
@@ -18,6 +19,7 @@ pub use gpt_oss_parser::{GptOssReasoningParser, harmony_terminator_token_ids};
 pub use granite_parser::GraniteReasoningParser;
 pub use inkling_parser::InklingReasoningParser;
 pub use minimax_append_think_parser::MiniMaxAppendThinkParser;
+pub use solar_parser::SolarOpen2ReasoningParser;
 
 /// Kimi-K2/K2.5 tool-call section marker. Shared between the `kimi_k25` reasoning-parser
 /// registration and its test fixtures so both stay in sync. Mirrors
@@ -167,7 +169,7 @@ pub trait ReasoningParser: Send + std::fmt::Debug {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ReasoningParserType {
-    /// Solar Open2 prefilled reasoning, with native tool-call escape.
+    /// Solar Open2 prefilled reasoning (port of UpstageAI/vllm's parser).
     SolarOpen2,
     DeepseekR1,
     Step3,
@@ -243,20 +245,7 @@ impl ReasoningParserType {
             BasicReasoningParser::new("<think>".into(), "</think>".into(), true, true);
         match self {
             ReasoningParserType::SolarOpen2 => ReasoningParserWrapper {
-                parser: Box::new(
-                    BasicReasoningParser::new(
-                        "<|think:start|>".into(),
-                        "<|think:end|>".into(),
-                        true,
-                        true,
-                    )
-                    .with_tool_start_token(crate::tool_calling::solar::CALL_START)
-                    .with_tool_parameter_tokens(
-                        crate::tool_calling::solar::ARG_START,
-                        crate::tool_calling::solar::ARG_END,
-                    )
-                    .with_single_char_marker_buffering(),
-                ),
+                parser: Box::new(SolarOpen2ReasoningParser::new()),
             },
             ReasoningParserType::DeepseekR1 => ReasoningParserWrapper {
                 parser: Box::new(force_reasoning_basic_parser),
