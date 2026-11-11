@@ -229,9 +229,11 @@ mod tests {
         for (raw, reasoning, content) in [
             ("생각<|think:end|>답", "생각", "답"),
             ("<|think:start|>생각<|think:end|>답", "생각", "답"),
+            // A complete call written while thinking moves to content; the rest
+            // of the thought is stripped as in the reference.
             (
                 "plan <|tool_call:start|>f\n<|tool_call:end|>",
-                "plan ",
+                "plan",
                 "<|tool_call:start|>f\n<|tool_call:end|>",
             ),
         ] {
